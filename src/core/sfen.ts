@@ -83,7 +83,7 @@ export function parseSfen(sfen: string): Position {
       const upper = pieceChar.toUpperCase();
       const baseType = CHAR_TO_TYPE[upper];
       if (baseType === undefined) throw new Error(`invalid hand piece char: ${pieceChar}`);
-      const handIdx = pieceChar === upper ? 1 : 0;
+      const handIdx = pieceChar === upper ? 0 : 1;
       pos.hands[handIdx][baseType - 1] = count;
     }
   }
@@ -116,13 +116,13 @@ export function toSfen(pos: Position): string {
   }
 
   let handsStr = '';
-  // 後手(大文字)を先に、先手(小文字)を後に、共に歩香桂銀金角飛の順で列挙する
-  for (const side of [1, 0] as const) {
+  // 先手(大文字)を先に、後手(小文字)を後に、共に歩香桂銀金角飛の順で列挙する
+  for (const side of [0, 1] as const) {
     for (const pt of HAND_PIECE_TYPES) {
       const count = pos.hands[side][pt - 1];
       if (count === 0) continue;
       const char = SFEN_CHARS[pt];
-      handsStr += (count > 1 ? String(count) : '') + (side === 1 ? char : char.toLowerCase());
+      handsStr += (count > 1 ? String(count) : '') + (side === 0 ? char : char.toLowerCase());
     }
   }
   if (handsStr === '') handsStr = '-';

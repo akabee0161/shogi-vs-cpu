@@ -34,16 +34,16 @@ describe('sfen', () => {
   });
 
   it('持ち駒ありの局面をラウンドトリップできる（成駒・複数枚・両陣営）', () => {
-    const sfen = '9/9/9/9/4k4/9/9/9/4K4 w 2Pb3g 15';
+    const sfen = '9/9/9/9/4k4/9/9/9/4K4 w 2P3gb 15';
     const pos = parseSfen(sfen);
-    expect(pos.hands[1][PAWN - 1]).toBe(2); // 後手が歩を2枚
-    expect(pos.hands[0][BISHOP - 1]).toBe(1); // 先手が角を1枚
-    expect(pos.hands[0][GOLD - 1]).toBe(3); // 先手が金を3枚
+    expect(pos.hands[0][PAWN - 1]).toBe(2); // 先手が歩を2枚
+    expect(pos.hands[1][BISHOP - 1]).toBe(1); // 後手が角を1枚
+    expect(pos.hands[1][GOLD - 1]).toBe(3); // 後手が金を3枚
     expect(toSfen(pos)).toBe(sfen);
   });
 
   it('成駒 (+記法) を含む局面をラウンドトリップできる', () => {
-    const sfen = '4k4/9/9/9/9/9/9/9/4K2+R1 b - 1';
+    const sfen = '4k4/9/9/9/9/9/9/9/4K3+R b - 1';
     const pos = parseSfen(sfen);
     expect(pos.board[squareIndex(1, 9)]).toBe(DRAGON);
     expect(toSfen(pos)).toBe(sfen);
