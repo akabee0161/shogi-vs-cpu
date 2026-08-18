@@ -11,10 +11,10 @@ function pieceValue(pieceType: number): number {
 }
 
 function moveOrderScore(pos: Position, move: Move): number {
-  const targetPiece = pos.board[move.to];
+  const targetPiece = pos.board[move.to] ?? 0;
   if (targetPiece === 0) return 0;
   const victimValue = pieceValue(Math.abs(targetPiece));
-  const aggressorType = move.drop ?? (move.from !== null ? Math.abs(pos.board[move.from]) : 0);
+  const aggressorType = move.drop ?? (move.from !== null ? Math.abs(pos.board[move.from] ?? 0) : 0);
   return victimValue * 100 - pieceValue(aggressorType);
 }
 
