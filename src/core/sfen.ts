@@ -45,6 +45,7 @@ export function parseSfen(sfen: string): Position {
     let i = 0;
     while (i < rankStr.length) {
       const ch = rankStr[i];
+      if (ch === undefined) throw new Error(`invalid rank string at index ${i}`);
       if (ch >= '1' && ch <= '9') {
         file -= Number(ch);
         i += 1;
@@ -56,6 +57,7 @@ export function parseSfen(sfen: string): Position {
         i += 1;
       }
       const pieceChar = rankStr[i];
+      if (pieceChar === undefined) throw new Error(`invalid piece char at index ${i}`);
       const upper = pieceChar.toUpperCase();
       const baseType = CHAR_TO_TYPE[upper];
       if (baseType === undefined) throw new Error(`invalid piece char: ${pieceChar}`);
@@ -73,12 +75,16 @@ export function parseSfen(sfen: string): Position {
     let i = 0;
     while (i < handsPart.length) {
       let countStr = '';
-      while (handsPart[i] >= '0' && handsPart[i] <= '9') {
-        countStr += handsPart[i];
+      while (i < handsPart.length) {
+        const ch = handsPart[i];
+        if (ch === undefined) break;
+        if (!(ch >= '0' && ch <= '9')) break;
+        countStr += ch;
         i += 1;
       }
       const count = countStr === '' ? 1 : Number(countStr);
       const pieceChar = handsPart[i];
+      if (pieceChar === undefined) throw new Error(`invalid hand piece char at index ${i}`);
       i += 1;
       const upper = pieceChar.toUpperCase();
       const baseType = CHAR_TO_TYPE[upper];
@@ -99,7 +105,7 @@ export function toSfen(pos: Position): string {
     let emptyRun = 0;
     for (let file = 9; file >= 1; file--) {
       const piece = pos.board[squareIndex(file, rank)];
-      if (piece === 0) {
+      if (piece === undefined || piece === 0) {
         emptyRun += 1;
         continue;
       }
@@ -109,6 +115,7 @@ export function toSfen(pos: Position): string {
       }
       const pieceType = Math.abs(piece);
       const char = SFEN_CHARS[pieceType];
+      if (char === undefined) throw new Error(`invalid piece type: ${pieceType}`);
       rankStr += piece > 0 ? char : char.toLowerCase();
     }
     if (emptyRun > 0) rankStr += String(emptyRun);
@@ -120,8 +127,9 @@ export function toSfen(pos: Position): string {
   for (const side of [0, 1] as const) {
     for (const pt of HAND_PIECE_TYPES) {
       const count = pos.hands[side][pt - 1];
-      if (count === 0) continue;
+      if (count === undefined || count === 0) continue;
       const char = SFEN_CHARS[pt];
+      if (char === undefined) throw new Error(`invalid piece type: ${pt}`);
       handsStr += (count > 1 ? String(count) : '') + (side === 0 ? char : char.toLowerCase());
     }
   }
