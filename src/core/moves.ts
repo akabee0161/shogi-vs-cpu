@@ -60,6 +60,8 @@ const KING_VECTORS: Vector[] = [
 const BISHOP_DIRS: Vector[] = [
   [1, -1],
   [-1, -1],
+  [1, 1],
+  [-1, 1],
 ];
 const ROOK_DIRS: Vector[] = [
   [0, -1],
@@ -122,24 +124,9 @@ function addMoveIfValid(
 
   const side: 'b' | 'w' = sign > 0 ? 'b' : 'w';
   const forced = mustPromote(pieceType, toRank, side);
-
-  // 駒種ごとのプロモーション可否判定
-  let eligible = false;
-  if (pieceType === KNIGHT) {
-    // 桂は強制成の場合のみプロモーション移動
-    eligible = forced;
-  } else if (
-    pieceType === PAWN ||
-    pieceType === LANCE ||
-    pieceType === PROM_PAWN ||
-    pieceType === PROM_LANCE
-  ) {
-    // 歩と香（および成駒）のみ、敵陣に入るときプロモーション選択肢を提供
-    eligible =
-      canPromote(pieceType) &&
-      (isInPromotionZone(toRank, side) || isInPromotionZone(rankOf(from), side));
-  }
-  // その他の駒（銀、金、角、飛）はelectable = false（プロモーション選択肢なし）
+  const eligible =
+    canPromote(pieceType) &&
+    (isInPromotionZone(toRank, side) || isInPromotionZone(rankOf(from), side));
 
   if (eligible) {
     moves.push({ from, to, promote: true });

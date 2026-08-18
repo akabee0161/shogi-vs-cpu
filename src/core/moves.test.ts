@@ -32,8 +32,14 @@ describe('pseudoLegalBoardMoves', () => {
   it('桂は2マス前の左右にのみ進める(飛び越え可)', () => {
     const pos = parseSfen('9/9/9/9/4N4/9/9/9/9 b - 1');
     const moves = pseudoLegalBoardMoves(pos);
+    // 移動先は3段目(敵陣)なので強制成りではなく成り・不成りの両方を生成する
     expect(toSet(moves)).toEqual(
-      new Set([`${squareIndex(6, 3)}:false`, `${squareIndex(4, 3)}:false`]),
+      new Set([
+        `${squareIndex(6, 3)}:false`,
+        `${squareIndex(6, 3)}:true`,
+        `${squareIndex(4, 3)}:false`,
+        `${squareIndex(4, 3)}:true`,
+      ]),
     );
   });
 
@@ -115,13 +121,15 @@ describe('pseudoLegalBoardMoves', () => {
   it('角は斜め4方向に何マスでも進む', () => {
     const pos = parseSfen('9/9/9/9/4B4/9/9/9/9 b - 1');
     const moves = pseudoLegalBoardMoves(pos);
-    expect(moves).toHaveLength(4 + 4); // 各方向とも盤端まで4マス
+    // 4方向×4マス=16マス到達可能。うち敵陣(1〜3段目)に入る6マスは成り・不成りの両方を生成するため+6
+    expect(moves).toHaveLength(16 + 6);
   });
 
   it('飛は縦横4方向に何マスでも進む', () => {
     const pos = parseSfen('9/9/9/9/4R4/9/9/9/9 b - 1');
     const moves = pseudoLegalBoardMoves(pos);
-    expect(moves).toHaveLength(8 + 8); // 縦8マス・横8マス
+    // 縦横4方向×4マス=16マス到達可能。うち敵陣(1〜3段目)に入る3マス(縦方向上)は成り・不成りの両方を生成するため+3
+    expect(moves).toHaveLength(16 + 3);
   });
 
   it('馬(角成)は角の動き+上下左右1マス', () => {
