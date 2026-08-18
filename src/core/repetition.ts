@@ -11,10 +11,20 @@ function positionKey(pos: Position): string {
   return sfen.slice(0, sfen.lastIndexOf(' '));
 }
 
-function allInCheckBetween(history: readonly Position[], start: number, end: number): boolean {
+function allInCheckBetween(
+  history: readonly Position[],
+  start: number,
+  end: number,
+  checkedSide: 'b' | 'w',
+): boolean {
   for (let i = start + 1; i <= end; i++) {
     const pos = history[i];
-    if (pos === undefined || !isInCheck(pos, pos.sideToMove)) return false;
+    if (pos === undefined) return false;
+    // Only check positions where it's the checked side's turn to move.
+    // Skip positions where the checking side is to move (those are defensive moves).
+    if (pos.sideToMove === checkedSide) {
+      if (!isInCheck(pos, checkedSide)) return false;
+    }
   }
   return true;
 }
@@ -35,7 +45,11 @@ export function checkRepetition(history: readonly Position[]): RepetitionResult 
   for (let k = 1; k < last4.length; k++) {
     const start = last4[k - 1];
     const end = last4[k];
-    if (start === undefined || end === undefined || !allInCheckBetween(history, start, end)) {
+    if (
+      start === undefined ||
+      end === undefined ||
+      !allInCheckBetween(history, start, end, current.sideToMove)
+    ) {
       allChecks = false;
       break;
     }
