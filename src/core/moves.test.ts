@@ -160,15 +160,17 @@ describe('pseudoLegalDropMoves', () => {
   it('持ち駒の歩を空きマスに打てる', () => {
     const pos = parseSfen('9/9/9/9/9/9/9/9/9 b P 1');
     const moves = pseudoLegalDropMoves(pos);
-    expect(moves).toHaveLength(81);
-    expect(moves[0]).toEqual({ from: null, to: 0, promote: false, drop: 1 });
+    // 1段目9マスは行き所のない駒(歩)への打ち禁止で除外されるため 81-9=72
+    expect(moves).toHaveLength(72);
+    expect(moves[0]).toEqual({ from: null, to: 9, promote: false, drop: 1 });
   });
 
   it('駒がある場所には打てない', () => {
     const pos = parseSfen('9/9/9/9/9/9/9/9/4K4 b P 1');
     const moves = pseudoLegalDropMoves(pos);
     expect(moves.some((m) => m.to === squareIndex(5, 9))).toBe(false);
-    expect(moves).toHaveLength(80);
+    // 1段目9マス除外(72) - 玉がいる9段目1マス = 71
+    expect(moves).toHaveLength(71);
   });
 
   it('二歩: 同じ筋に自分の不成の歩があれば打てない', () => {
