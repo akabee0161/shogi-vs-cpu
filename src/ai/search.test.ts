@@ -30,3 +30,28 @@ describe('orderMoves', () => {
     expect(ordered[0]).toEqual({ from: squareIndex(5, 5), to: squareIndex(6, 4), promote: false });
   });
 });
+
+describe('search (静止探索)', () => {
+  it('駒交換で損する手(タダ捨てに近い)を深さ1でも避ける', () => {
+    // 先手銀4四、後手歩5三、後手金6三(歩を守っている)、深さ1では静止探索なしだと銀で歩を取ってしまう
+    const pos = parseSfen('8k/9/3gp4/5S3/9/9/9/9/K8 b - 1');
+    const result = search(pos, 1);
+    expect(result.move).not.toEqual({
+      from: squareIndex(4, 4),
+      to: squareIndex(5, 3),
+      promote: true,
+    });
+  });
+
+  it('useQuiescence=false では取り返しを読まず駒交換で損する手を選んでしまう(回帰確認用)', () => {
+    const pos = parseSfen('8k/9/3gp4/5S3/9/9/9/9/K8 b - 1');
+    const result = search(pos, 1, false);
+    expect(result.move).toEqual({ from: squareIndex(4, 4), to: squareIndex(5, 3), promote: true });
+  });
+
+  it('1手詰めは静止探索を有効にしても引き続き発見できる(回帰確認)', () => {
+    const pos = parseSfen('kN7/1G7/9/9/9/9/9/9/4K4 b R 1');
+    const result = search(pos, 1);
+    expect(result.move).toEqual({ from: null, to: squareIndex(9, 2), promote: false, drop: ROOK });
+  });
+});
