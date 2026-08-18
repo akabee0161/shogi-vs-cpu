@@ -1,6 +1,6 @@
 import { applyMove } from './apply-move';
-import { pseudoLegalBoardMoves, pseudoLegalMoves } from './moves';
-import { KING } from './piece';
+import { type Move, pseudoLegalBoardMoves, pseudoLegalMoves } from './moves';
+import { KING, PAWN } from './piece';
 import type { Position } from './position';
 
 function findKing(pos: Position, side: 'b' | 'w'): number {
@@ -18,8 +18,21 @@ export function isInCheck(pos: Position, side: 'b' | 'w'): boolean {
   return pseudoLegalBoardMoves(opponentView).some((m) => m.to === kingSquare);
 }
 
-/** 疑似合法手から、指した結果自玉が王手になる手を除去する。ピン・開き王手・合駒はすべてこの力任せな判定で自動的に処理される。 */
-export function legalMoves(pos: Position): import('./moves').Move[] {
+function isDisallowedPawnDrop(pos: Position, move: Move): boolean {
+  if (move.drop !== PAWN) return false;
+  const next = applyMove(pos, move);
+  if (!isInCheck(next, next.sideToMove)) return false;
+  return hasNoLegalMoves(next);
+}
+
+export function legalMoves(pos: Position): Move[] {
   const side = pos.sideToMove;
-  return pseudoLegalMoves(pos).filter((move) => !isInCheck(applyMove(pos, move), side));
+  return pseudoLegalMoves(pos)
+    .filter((move) => !isInCheck(applyMove(pos, move), side))
+    .filter((move) => !isDisallowedPawnDrop(pos, move));
+}
+
+/** 手番側の合法手がゼロかどうか。詰み判定と「王手でない合法手ゼロも負け」の両方に使う（Task 8）。 */
+export function hasNoLegalMoves(pos: Position): boolean {
+  return legalMoves(pos).length === 0;
 }

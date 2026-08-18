@@ -49,3 +49,37 @@ describe('legalMoves', () => {
     expect(blockDests).toEqual(expectedBlocks);
   });
 });
+
+import { applyMove } from './apply-move';
+import { LANCE, PAWN } from './piece';
+import { hasNoLegalMoves } from './rules';
+
+describe('打ち歩詰め', () => {
+  it('歩を打つと詰みになる場合、その歩打ちは非合法', () => {
+    // 後手玉9一、先手は9二に歩を打つことで詰ます。詰みになるので禁止。
+    const pos = parseSfen('k8/1S7/1G7/9/9/9/9/9/4K4 b P 1');
+    const moves = legalMoves(pos);
+    const pawnDropAt92 = moves.find((m) => m.drop === PAWN && m.to === squareIndex(9, 2));
+    expect(pawnDropAt92).toBeUndefined();
+  });
+
+  it('打ち歩詰めになる手を実際に指すと相手はhasNoLegalMovesになる(判定の整合性確認)', () => {
+    const pos = parseSfen('k8/1S7/1G7/9/9/9/9/9/4K4 b P 1');
+    const next = applyMove(pos, { from: null, to: squareIndex(9, 2), promote: false, drop: PAWN });
+    expect(hasNoLegalMoves(next)).toBe(true);
+  });
+
+  it('香を打って詰ます手は打ち歩詰めルールの対象外で合法', () => {
+    const pos = parseSfen('k8/1S7/1G7/9/9/9/9/9/4K4 b L 1');
+    const moves = legalMoves(pos);
+    const lanceDropAt92 = moves.find((m) => m.drop === LANCE && m.to === squareIndex(9, 2));
+    expect(lanceDropAt92).toBeDefined();
+  });
+
+  it('歩を打っても玉が逃げられるなら詰みではないので合法', () => {
+    const pos = parseSfen('k8/9/9/9/9/9/9/9/4K4 b P 1'); // 玉の逃げ場を塞ぐ駒がない
+    const moves = legalMoves(pos);
+    const pawnDropAt92 = moves.find((m) => m.drop === PAWN && m.to === squareIndex(9, 2));
+    expect(pawnDropAt92).toBeDefined();
+  });
+});
