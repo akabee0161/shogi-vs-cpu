@@ -2,7 +2,7 @@ import { applyMove } from '../core/apply-move';
 import type { Move } from '../core/moves';
 import type { Position } from '../core/position';
 import { legalMoves } from '../core/rules';
-import { evaluate, PIECE_VALUES } from './evaluate';
+import { PIECE_VALUES, evaluate } from './evaluate';
 
 const MATE_SCORE = 100_000;
 
@@ -27,7 +27,7 @@ function negamax(pos: Position, depth: number, alpha: number, beta: number): num
   if (moves.length === 0) return -MATE_SCORE;
   if (depth === 0) return evaluate(pos);
 
-  let value = -Infinity;
+  let value = Number.NEGATIVE_INFINITY;
   let localAlpha = alpha;
   for (const move of orderMoves(pos, moves)) {
     const score = -negamax(applyMove(pos, move), depth - 1, -beta, -localAlpha);
@@ -43,9 +43,9 @@ export function search(pos: Position, depth: number): { move: Move | null; score
   if (moves.length === 0) return { move: null, score: -MATE_SCORE };
 
   let bestMove: Move | null = null;
-  let bestScore = -Infinity;
-  let alpha = -Infinity;
-  const beta = Infinity;
+  let bestScore = Number.NEGATIVE_INFINITY;
+  let alpha = Number.NEGATIVE_INFINITY;
+  const beta = Number.POSITIVE_INFINITY;
 
   for (const move of orderMoves(pos, moves)) {
     const score = -negamax(applyMove(pos, move), depth - 1, -beta, -alpha);
