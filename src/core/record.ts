@@ -55,7 +55,7 @@ export function moveToKanji(move: Move, pos: Position, prevMove: Move | null): s
     pieceType = move.drop;
   } else {
     if (move.from === null) throw new Error('invalid move: from is null but drop is undefined');
-    pieceType = Math.abs(pos.board[move.from]);
+    pieceType = Math.abs(pos.board[move.from] ?? 0);
   }
 
   const rankKanji = RANK_KANJI[rankOf(move.to) - 1];

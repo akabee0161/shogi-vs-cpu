@@ -45,7 +45,7 @@ function pieceValue(pieceType: number): number {
 function materialScore(pos: Position): number {
   let score = 0;
   for (let i = 0; i < 81; i++) {
-    const piece = pos.board[i];
+    const piece = pos.board[i] ?? 0;
     if (piece === 0) continue;
     const value = pieceValue(Math.abs(piece));
     score += piece > 0 ? value : -value;
@@ -57,8 +57,8 @@ function handScore(pos: Position): number {
   let score = 0;
   for (const pieceType of HAND_PIECE_TYPES) {
     const value = pieceValue(pieceType) * HAND_BONUS_MULTIPLIER;
-    score += pos.hands[0][pieceType - 1] * value;
-    score -= pos.hands[1][pieceType - 1] * value;
+    score += (pos.hands[0][pieceType - 1] ?? 0) * value;
+    score -= (pos.hands[1][pieceType - 1] ?? 0) * value;
   }
   return score;
 }
@@ -84,7 +84,7 @@ function kingShieldScoreForSide(pos: Position, side: 'b' | 'w'): number {
       const f = file + df;
       const r = rank + dr;
       if (f < 1 || f > 9 || r < 1 || r > 9) continue;
-      const piece = pos.board[squareIndex(f, r)];
+      const piece = pos.board[squareIndex(f, r)] ?? 0;
       const isOwn = piece !== 0 && (side === 'b' ? piece > 0 : piece < 0);
       if (isOwn) count += 1;
     }
