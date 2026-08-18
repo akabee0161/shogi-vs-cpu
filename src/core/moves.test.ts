@@ -153,3 +153,73 @@ describe('pseudoLegalBoardMoves', () => {
     expect(moves).toEqual([{ from: squareIndex(5, 5), to: squareIndex(5, 6), promote: false }]);
   });
 });
+
+import { pseudoLegalDropMoves, pseudoLegalMoves } from './moves';
+
+describe('pseudoLegalDropMoves', () => {
+  it('持ち駒の歩を空きマスに打てる', () => {
+    const pos = parseSfen('9/9/9/9/9/9/9/9/9 b P 1');
+    const moves = pseudoLegalDropMoves(pos);
+    expect(moves).toHaveLength(81);
+    expect(moves[0]).toEqual({ from: null, to: 0, promote: false, drop: 1 });
+  });
+
+  it('駒がある場所には打てない', () => {
+    const pos = parseSfen('9/9/9/9/9/9/9/9/4K4 b P 1');
+    const moves = pseudoLegalDropMoves(pos);
+    expect(moves.some((m) => m.to === squareIndex(5, 9))).toBe(false);
+    expect(moves).toHaveLength(80);
+  });
+
+  it('二歩: 同じ筋に自分の不成の歩があれば打てない', () => {
+    const pos = parseSfen('9/9/9/9/4P4/9/9/9/9 b P 1'); // 5五に自分の歩、持ち駒に歩1枚
+    const moves = pseudoLegalDropMoves(pos);
+    expect(moves.some((m) => fileOfMove(m) === 5)).toBe(false);
+
+    function fileOfMove(m: { to: number }) {
+      return 9 - (m.to % 9);
+    }
+  });
+
+  it('と金がある筋には二歩の制限を受けず歩を打てる', () => {
+    const pos = parseSfen('9/9/9/9/4+P4/9/9/9/9 b P 1'); // 5五にと金
+    const moves = pseudoLegalDropMoves(pos);
+    expect(moves.some((m) => m.to === squareIndex(5, 4))).toBe(true);
+  });
+
+  it('歩は1段目に打てない(行き所のない駒)', () => {
+    const pos = parseSfen('9/9/9/9/9/9/9/9/9 b P 1');
+    const moves = pseudoLegalDropMoves(pos);
+    expect(moves.some((m) => m.to === squareIndex(5, 1))).toBe(false);
+  });
+
+  it('香は1段目に打てない', () => {
+    const pos = parseSfen('9/9/9/9/9/9/9/9/9 b L 1');
+    const moves = pseudoLegalDropMoves(pos);
+    expect(moves.some((m) => m.to === squareIndex(5, 1))).toBe(false);
+  });
+
+  it('桂は1〜2段目に打てない', () => {
+    const pos = parseSfen('9/9/9/9/9/9/9/9/9 b N 1');
+    const moves = pseudoLegalDropMoves(pos);
+    expect(moves.some((m) => m.to === squareIndex(5, 1))).toBe(false);
+    expect(moves.some((m) => m.to === squareIndex(5, 2))).toBe(false);
+    expect(moves.some((m) => m.to === squareIndex(5, 3))).toBe(true);
+  });
+
+  it('持ち駒がない駒種は打つ手を生成しない', () => {
+    const pos = parseSfen('9/9/9/9/9/9/9/9/9 b - 1');
+    expect(pseudoLegalDropMoves(pos)).toHaveLength(0);
+  });
+});
+
+describe('pseudoLegalMoves', () => {
+  it('盤上の移動と持ち駒の打ちの両方を含む', () => {
+    const pos = parseSfen('9/9/9/9/4P4/9/9/9/9 b P 1');
+    const moves = pseudoLegalMoves(pos);
+    const boardMoveCount = moves.filter((m) => m.from !== null).length;
+    const dropMoveCount = moves.filter((m) => m.from === null).length;
+    expect(boardMoveCount).toBe(1); // 盤上の歩が1マス前進
+    expect(dropMoveCount).toBeGreaterThan(0);
+  });
+});

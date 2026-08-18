@@ -2,6 +2,7 @@ import {
   BISHOP,
   DRAGON,
   GOLD,
+  HAND_PIECE_TYPES,
   HORSE,
   KING,
   KNIGHT,
@@ -184,4 +185,40 @@ export function pseudoLegalBoardMoves(pos: Position): Move[] {
   }
 
   return moves;
+}
+
+function hasPawnOnFile(pos: Position, file: number, side: 'b' | 'w'): boolean {
+  const targetPiece = side === 'b' ? PAWN : -PAWN;
+  for (let rank = 1; rank <= 9; rank++) {
+    if (pos.board[squareIndex(file, rank)] === targetPiece) return true;
+  }
+  return false;
+}
+
+export function pseudoLegalDropMoves(pos: Position): Move[] {
+  const moves: Move[] = [];
+  const side = pos.sideToMove;
+  const handIdx = side === 'b' ? 0 : 1;
+  const hand = pos.hands[handIdx];
+
+  for (const pieceType of HAND_PIECE_TYPES) {
+    if (hand[pieceType - 1] === 0) continue;
+
+    for (let to = 0; to < 81; to++) {
+      if (pos.board[to] !== 0) continue;
+      const toFile = fileOf(to);
+      const toRank = rankOf(to);
+
+      if (mustPromote(pieceType, toRank, side)) continue;
+      if (pieceType === PAWN && hasPawnOnFile(pos, toFile, side)) continue;
+
+      moves.push({ from: null, to, promote: false, drop: pieceType });
+    }
+  }
+
+  return moves;
+}
+
+export function pseudoLegalMoves(pos: Position): Move[] {
+  return [...pseudoLegalBoardMoves(pos), ...pseudoLegalDropMoves(pos)];
 }
