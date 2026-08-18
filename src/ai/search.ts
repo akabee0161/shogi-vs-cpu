@@ -68,27 +68,54 @@ function negamax(
   return value;
 }
 
+export function searchAllMoves(
+  pos: Position,
+  depth: number,
+  useQuiescence = true,
+): { move: Move; score: number }[] {
+  const moves = legalMoves(pos);
+  const results: { move: Move; score: number }[] = [];
+
+  for (const move of orderMoves(pos, moves)) {
+    const score = -negamax(
+      applyMove(pos, move),
+      depth - 1,
+      Number.NEGATIVE_INFINITY,
+      Number.POSITIVE_INFINITY,
+      useQuiescence,
+    );
+    results.push({ move, score });
+  }
+
+  return results;
+}
+
 export function search(
   pos: Position,
   depth: number,
   useQuiescence = true,
 ): { move: Move | null; score: number } {
-  const moves = legalMoves(pos);
-  if (moves.length === 0) return { move: null, score: -MATE_SCORE };
+  const results = searchAllMoves(pos, depth, useQuiescence);
+  if (results.length === 0) return { move: null, score: -MATE_SCORE };
+  return results.reduce((best, r) => (r.score > best.score ? r : best));
+}
 
-  let bestMove: Move | null = null;
-  let bestScore = Number.NEGATIVE_INFINITY;
-  let alpha = Number.NEGATIVE_INFINITY;
-  const beta = Number.POSITIVE_INFINITY;
+export function iterativeDeepeningSearchAllMoves(
+  pos: Position,
+  timeLimitMs: number,
+  useQuiescence = true,
+): { move: Move; score: number }[] {
+  const startTime = Date.now();
+  let bestResults = searchAllMoves(pos, 1, useQuiescence);
+  let depth = 2;
 
-  for (const move of orderMoves(pos, moves)) {
-    const score = -negamax(applyMove(pos, move), depth - 1, -beta, -alpha, useQuiescence);
-    if (score > bestScore) {
-      bestScore = score;
-      bestMove = move;
-    }
-    if (bestScore > alpha) alpha = bestScore;
+  while (Date.now() - startTime < timeLimitMs) {
+    const results = searchAllMoves(pos, depth, useQuiescence);
+    bestResults = results;
+    const topScore = results.reduce((max, r) => Math.max(max, r.score), Number.NEGATIVE_INFINITY);
+    if (topScore >= MATE_SCORE) break;
+    depth += 1;
   }
 
-  return { move: bestMove, score: bestScore };
+  return bestResults;
 }

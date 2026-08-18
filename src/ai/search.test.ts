@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ROOK } from '../core/piece';
+import { KNIGHT, ROOK } from '../core/piece';
 import { legalMoves } from '../core/rules';
 import { parseSfen } from '../core/sfen';
 import { squareIndex } from '../core/square';
-import { orderMoves, search } from './search';
+import { iterativeDeepeningSearchAllMoves, orderMoves, search, searchAllMoves } from './search';
 
 describe('search', () => {
   it('1手詰めを発見できる', () => {
@@ -53,5 +53,29 @@ describe('search (静止探索)', () => {
     const pos = parseSfen('kN7/1G7/9/9/9/9/9/9/4K4 b R 1');
     const result = search(pos, 1);
     expect(result.move).toEqual({ from: null, to: squareIndex(9, 2), promote: false, drop: ROOK });
+  });
+});
+
+describe('searchAllMoves / iterativeDeepeningSearchAllMoves', () => {
+  it('searchAllMoves は全合法手のスコアを返す', () => {
+    // 玉のみ、後手玉5九(盤端なので合法手5手)
+    const pos = parseSfen('4k4/9/9/9/9/9/9/9/4K4 b - 1');
+    const results = searchAllMoves(pos, 1);
+    expect(results).toHaveLength(5);
+  });
+
+  it('iterativeDeepeningSearchAllMoves は時間制限内で深さ1以上の結果を返す', () => {
+    const pos = parseSfen('4k4/9/9/9/9/9/9/9/4K4 b - 1');
+    const results = iterativeDeepeningSearchAllMoves(pos, 50);
+    expect(results.length).toBeGreaterThan(0);
+  });
+
+  it('iterativeDeepeningSearchAllMoves は1手詰めを発見できる', () => {
+    // 先手玉9一(自分の歩8一・桂9二・角8二に囲まれ動けない)、後手玉5九(遠方、無関係)、後手持ち駒に桂
+    // 桂を8三に打つと9一に王手がかかり、玉は動けず、桂は捕れず、他の合法手もすべて王手放置になる一意な詰み
+    const pos = parseSfen('kp7/nb7/9/9/9/9/9/9/4K4 b N 1');
+    const results = iterativeDeepeningSearchAllMoves(pos, 200);
+    const best = results.reduce((a, b) => (b.score > a.score ? b : a));
+    expect(best.move).toEqual({ from: null, to: squareIndex(8, 3), promote: false, drop: KNIGHT });
   });
 });
