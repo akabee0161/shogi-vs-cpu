@@ -18,10 +18,10 @@ describe('isInCheck', () => {
 
 describe('legalMoves', () => {
   it('王手放置になる手(無関係な駒を動かす手)は除外される', () => {
-    const pos = parseSfen('4r4/9/9/3G5/9/9/9/9/4K4 b - 1'); // 後手飛車5一、先手金4六(無関係)、先手玉5九
+    const pos = parseSfen('4r4/9/9/1G7/9/9/9/9/4K4 b - 1'); // 後手飛車5一、先手金8四(無関係)、先手玉5九
     const moves = legalMoves(pos);
     const kingMoves = moves.filter((m) => m.from === squareIndex(5, 9));
-    const goldMoves = moves.filter((m) => m.from === squareIndex(4, 6));
+    const goldMoves = moves.filter((m) => m.from === squareIndex(8, 4));
     expect(kingMoves.length).toBeGreaterThan(0);
     expect(goldMoves).toHaveLength(0);
   });
