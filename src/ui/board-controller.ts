@@ -8,14 +8,17 @@ export type BoardController = {
   element: HTMLElement;
   setPosition: (pos: Position) => void;
   setInputEnabled: (enabled: boolean) => void;
+  handlePieceTypeClick: (side: 'b' | 'w', pieceType: number) => void;
 };
+
+type Selection = { kind: 'board'; square: number } | { kind: 'hand'; pieceType: number };
 
 export function createBoardController(
   initialPos: Position,
   onMove: (move: Move) => void,
 ): BoardController {
   let pos = initialPos;
-  let selectedSquare: number | null = null;
+  let selected: Selection | null = null;
   let inputEnabled = true;
 
   const element = createBoardElement(pos, (square) => {
@@ -34,46 +37,18 @@ export function createBoardController(
     }
   }
 
-  function selectSquare(square: number, moves: Move[]): void {
-    selectedSquare = square;
+  function selectBoardSquare(square: number, moves: Move[]): void {
+    selected = { kind: 'board', square };
     clearHighlights();
     highlightSquares(moves.map((m) => m.to));
   }
 
   function deselect(): void {
-    selectedSquare = null;
+    selected = null;
     clearHighlights();
   }
 
-  async function handleSquareClick(square: number): Promise<void> {
-    if (!inputEnabled) return;
-
-    if (selectedSquare === square) {
-      deselect();
-      return;
-    }
-
-    const ownMovesFromSquare = legalMoves(pos).filter((m) => m.from === square);
-
-    if (selectedSquare === null) {
-      if (ownMovesFromSquare.length === 0) return;
-      selectSquare(square, ownMovesFromSquare);
-      return;
-    }
-
-    const candidates = legalMoves(pos).filter((m) => m.from === selectedSquare && m.to === square);
-
-    if (candidates.length === 0) {
-      if (ownMovesFromSquare.length > 0) {
-        selectSquare(square, ownMovesFromSquare);
-      } else {
-        deselect();
-      }
-      return;
-    }
-
-    deselect();
-
+  async function resolveCandidate(candidates: Move[]): Promise<void> {
     if (candidates.length === 1) {
       const only = candidates[0];
       if (only === undefined) throw new Error('unreachable');
@@ -90,6 +65,67 @@ export function createBoardController(
     onMove(shouldPromote ? promoteMove : declineMove);
   }
 
+  async function handleSquareClick(square: number): Promise<void> {
+    if (!inputEnabled) return;
+
+    if (selected?.kind === 'board' && selected.square === square) {
+      deselect();
+      return;
+    }
+
+    const ownMovesFromSquare = legalMoves(pos).filter((m) => m.from === square);
+
+    if (selected === null) {
+      if (ownMovesFromSquare.length === 0) return;
+      selectBoardSquare(square, ownMovesFromSquare);
+      return;
+    }
+
+    let candidates: Move[];
+    if (selected !== null && selected.kind === 'board') {
+      const boardSelection = selected as { kind: 'board'; square: number };
+      candidates = legalMoves(pos).filter(
+        (m) => m.from === boardSelection.square && m.to === square,
+      );
+    } else if (selected !== null && selected.kind === 'hand') {
+      const handSelection = selected as { kind: 'hand'; pieceType: number };
+      candidates = legalMoves(pos).filter(
+        (m) => m.drop === handSelection.pieceType && m.to === square,
+      );
+    } else {
+      candidates = [];
+    }
+
+    if (candidates.length === 0) {
+      if (ownMovesFromSquare.length > 0) {
+        selectBoardSquare(square, ownMovesFromSquare);
+      } else {
+        deselect();
+      }
+      return;
+    }
+
+    deselect();
+    await resolveCandidate(candidates);
+  }
+
+  function handlePieceTypeClick(side: 'b' | 'w', pieceType: number): void {
+    if (!inputEnabled) return;
+    if (side !== pos.sideToMove) return;
+
+    if (selected?.kind === 'hand' && selected.pieceType === pieceType) {
+      deselect();
+      return;
+    }
+
+    const moves = legalMoves(pos).filter((m) => m.drop === pieceType);
+    if (moves.length === 0) return;
+
+    selected = { kind: 'hand', pieceType };
+    clearHighlights();
+    highlightSquares(moves.map((m) => m.to));
+  }
+
   return {
     element,
     setPosition: (newPos) => {
@@ -101,5 +137,6 @@ export function createBoardController(
       inputEnabled = enabled;
       if (!enabled) deselect();
     },
+    handlePieceTypeClick,
   };
 }
