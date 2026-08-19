@@ -34,8 +34,11 @@ ankardo の `.claude/skills/new-game/SKILL.md` に対応する。
 - [ ] このリポジトリの GitHub Secrets を設定する
 
   ```bash
-  CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=... \
-    ankardo/scripts/setup-game-secrets.sh akabee0161/shogi-vs-cpu
+  read -r -s -p 'CLOUDFLARE_API_TOKEN: ' CLOUDFLARE_API_TOKEN
+  printf '\n'
+  read -r -p 'CLOUDFLARE_ACCOUNT_ID: ' CLOUDFLARE_ACCOUNT_ID
+  export CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID
+  ankardo/scripts/setup-game-secrets.sh akabee0161/shogi-vs-cpu
   ```
 
   `gh auth login` 済みで、対象リポジトリへの admin 権限が必要。
