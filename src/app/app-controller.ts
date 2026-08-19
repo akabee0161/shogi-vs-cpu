@@ -52,6 +52,11 @@ export function createAppController(
   initialState: GameState,
   aiClient: AiClient,
   onStateChange: (state: GameState) => void,
+  // CPU思考中にWorkerがエラーを起こした場合の通知。requestMoveのPromiseがreject
+  // されるとhandlePlayerMove/undo/restart/readyもrejectしうるため、ここで捕捉して
+  // 呼び出し元には常に成功させ、エラーはこのコールバックで別途通知する
+  // (CodeRabbit review, app-controller.ts:68-80)。
+  onError: (message: string) => void,
 ): AppController {
   let state = initialState;
   // undo/resign/restart で状態が変わった後に古いCPU応答が届いても上書きしないためのバージョン番号。
@@ -71,10 +76,17 @@ export function createAppController(
 
     const requestedVersion = stateVersion;
     const sfen = toSfen(currentPosition(state));
-    const [usiMove] = await Promise.all([
-      aiClient.requestMove(sfen, state.difficulty),
-      delay(MIN_THINKING_TIME_MS),
-    ]);
+    let usiMove: string;
+    try {
+      [usiMove] = await Promise.all([
+        aiClient.requestMove(sfen, state.difficulty),
+        delay(MIN_THINKING_TIME_MS),
+      ]);
+    } catch {
+      if (stateVersion !== requestedVersion) return;
+      onError('CPUの応答でエラーが発生しました。さいしょからやり直してください。');
+      return;
+    }
     if (stateVersion !== requestedVersion) return;
     const move = parseUsiMove(usiMove);
     setState(applyMoveToState(state, move));

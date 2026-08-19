@@ -27,12 +27,24 @@ function createAiClient(): AiClient {
   const worker = new Worker(new URL('./ai/worker.ts', import.meta.url), { type: 'module' });
   return {
     requestMove: (sfen, difficulty) =>
-      new Promise((resolve) => {
-        function handleMessage(event: MessageEvent<{ usiMove: string }>): void {
+      new Promise((resolve, reject) => {
+        function cleanup(): void {
           worker.removeEventListener('message', handleMessage);
+          worker.removeEventListener('error', handleError);
+        }
+        function handleMessage(event: MessageEvent<{ usiMove: string }>): void {
+          cleanup();
           resolve(event.data.usiMove);
         }
+        // Worker側で例外が起きた場合、messageが届かずPromiseが永久にpendingのままに
+        // なるとゲームが操作不能になる(CodeRabbit review, app-controller.ts:68-80)
+        // ため、errorイベントも監視してrejectする。
+        function handleError(event: ErrorEvent): void {
+          cleanup();
+          reject(new Error(event.message));
+        }
         worker.addEventListener('message', handleMessage);
+        worker.addEventListener('error', handleError);
         worker.postMessage({ sfen, difficulty });
       }),
   };
@@ -66,7 +78,12 @@ function startGame(app: HTMLElement, playerSide: 'b' | 'w', difficulty: Difficul
     boardController.handlePieceTypeClick('w', pieceType),
   );
 
-  const controller = createAppController(initialState, aiClient, render);
+  const controller = createAppController(initialState, aiClient, render, (message) => {
+    setStatusText(statusEl, message);
+    // CPU応答が返らないままだと まった/とうりょう/さいしょから が無効化されたままに
+    // なるため、せめて「さいしょから」等で復帰できるよう再度有効化する。
+    setControlsEnabled(controlsEl, true);
+  });
 
   const boardController = createBoardController(currentPosition(initialState), (move) => {
     void controller.handlePlayerMove(move);

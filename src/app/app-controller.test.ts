@@ -12,7 +12,7 @@ describe('createAppController', () => {
   it('プレイヤーの手の後、CPU番なら自動的にAIの手が適用される', async () => {
     const state = createGameState('b', 'normal');
     const aiClient = { requestMove: vi.fn().mockResolvedValue('3c3d') };
-    const controller = createAppController(state, aiClient, vi.fn());
+    const controller = createAppController(state, aiClient, vi.fn(), vi.fn());
 
     await controller.handlePlayerMove({
       from: squareIndex(7, 7),
@@ -28,7 +28,7 @@ describe('createAppController', () => {
     vi.useFakeTimers();
     const state = createGameState('b', 'normal');
     const aiClient = { requestMove: vi.fn().mockResolvedValue('3c3d') };
-    const controller = createAppController(state, aiClient, vi.fn());
+    const controller = createAppController(state, aiClient, vi.fn(), vi.fn());
 
     const movePromise = controller.handlePlayerMove({
       from: squareIndex(7, 7),
@@ -46,7 +46,7 @@ describe('createAppController', () => {
   it('undo でプレイヤーの手番まで戻る(CPU応手後なら2手戻る)', async () => {
     const state = createGameState('b', 'normal');
     const aiClient = { requestMove: vi.fn().mockResolvedValue('3c3d') };
-    const controller = createAppController(state, aiClient, vi.fn());
+    const controller = createAppController(state, aiClient, vi.fn(), vi.fn());
     await controller.handlePlayerMove({
       from: squareIndex(7, 7),
       to: squareIndex(7, 6),
@@ -61,7 +61,7 @@ describe('createAppController', () => {
     vi.useFakeTimers();
     const state = createGameState('b', 'normal');
     const aiClient = { requestMove: vi.fn().mockResolvedValue('3c3d') };
-    const controller = createAppController(state, aiClient, vi.fn());
+    const controller = createAppController(state, aiClient, vi.fn(), vi.fn());
 
     const movePromise = controller.handlePlayerMove({
       from: squareIndex(7, 7),
@@ -79,7 +79,7 @@ describe('createAppController', () => {
 
   it('resign で対局が終了する', () => {
     const state = createGameState('b', 'normal');
-    const controller = createAppController(state, { requestMove: vi.fn() }, vi.fn());
+    const controller = createAppController(state, { requestMove: vi.fn() }, vi.fn(), vi.fn());
     controller.resign();
     expect(controller.getState().status).toBe('ended');
   });
@@ -87,7 +87,7 @@ describe('createAppController', () => {
   it('restart で新しい対局になり、後手選択ならCPU(先手)が自動的に指す', async () => {
     const state = createGameState('b', 'normal');
     const aiClient = { requestMove: vi.fn().mockResolvedValue('7g7f') };
-    const controller = createAppController(state, aiClient, vi.fn());
+    const controller = createAppController(state, aiClient, vi.fn(), vi.fn());
     await controller.restart('w', 'weak');
     expect(controller.getState().moveHistory).toHaveLength(1);
     expect(controller.getState().playerSide).toBe('w');
@@ -96,7 +96,7 @@ describe('createAppController', () => {
   it('状態変化のたびに localStorage に保存される', async () => {
     const state = createGameState('b', 'normal');
     const aiClient = { requestMove: vi.fn().mockResolvedValue('3c3d') };
-    const controller = createAppController(state, aiClient, vi.fn());
+    const controller = createAppController(state, aiClient, vi.fn(), vi.fn());
     await controller.handlePlayerMove({
       from: squareIndex(7, 7),
       to: squareIndex(7, 6),
@@ -108,7 +108,7 @@ describe('createAppController', () => {
   it('後手を選んで対局を開始すると、CPU(先手)が自動的に指す', async () => {
     const state = createGameState('w', 'normal');
     const aiClient = { requestMove: vi.fn().mockResolvedValue('7g7f') };
-    const controller = createAppController(state, aiClient, vi.fn());
+    const controller = createAppController(state, aiClient, vi.fn(), vi.fn());
     await controller.ready;
     expect(aiClient.requestMove).toHaveBeenCalled();
     expect(controller.getState().moveHistory).toHaveLength(1);
@@ -121,7 +121,7 @@ describe('createAppController', () => {
       promote: false,
     });
     const aiClient = { requestMove: vi.fn().mockResolvedValue('3c3d') };
-    const controller = createAppController(played, aiClient, vi.fn());
+    const controller = createAppController(played, aiClient, vi.fn(), vi.fn());
     await controller.ready;
     expect(aiClient.requestMove).toHaveBeenCalled();
     expect(controller.getState().moveHistory).toHaveLength(2);
@@ -130,7 +130,7 @@ describe('createAppController', () => {
   it('後手対局でCPUの初手をundoしても、CPUが指し直して操作不能にならない', async () => {
     const state = createGameState('w', 'normal');
     const aiClient = { requestMove: vi.fn().mockResolvedValue('7g7f') };
-    const controller = createAppController(state, aiClient, vi.fn());
+    const controller = createAppController(state, aiClient, vi.fn(), vi.fn());
     await controller.ready;
     expect(controller.getState().moveHistory).toHaveLength(1);
 
@@ -144,7 +144,7 @@ describe('createAppController', () => {
   it("restart('w', ...) 直後のCPU初手をundoしても操作不能にならない", async () => {
     const state = createGameState('b', 'normal');
     const aiClient = { requestMove: vi.fn().mockResolvedValue('7g7f') };
-    const controller = createAppController(state, aiClient, vi.fn());
+    const controller = createAppController(state, aiClient, vi.fn(), vi.fn());
     await controller.restart('w', 'weak');
     expect(controller.getState().moveHistory).toHaveLength(1);
 
@@ -154,11 +154,55 @@ describe('createAppController', () => {
     expect(controller.getState().status).toBe('playing');
   });
 
+  it('CPU応答がエラーになった場合、onError が呼ばれ handlePlayerMove 自体は失敗しない', async () => {
+    const state = createGameState('b', 'normal');
+    const aiClient = { requestMove: vi.fn().mockRejectedValue(new Error('worker crashed')) };
+    const onError = vi.fn();
+    const controller = createAppController(state, aiClient, vi.fn(), onError);
+
+    await controller.handlePlayerMove({
+      from: squareIndex(7, 7),
+      to: squareIndex(7, 6),
+      promote: false,
+    });
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    // CPUの手は適用されず、プレイヤーの手だけが残る。
+    expect(controller.getState().moveHistory).toHaveLength(1);
+  });
+
+  it('CPU応答待ち中に resign すると、後から届くエラー応答は無視される', async () => {
+    let rejectRequestMove: (error: Error) => void = () => {};
+    const aiClient = {
+      requestMove: vi.fn(
+        () =>
+          new Promise<string>((_resolve, reject) => {
+            rejectRequestMove = reject;
+          }),
+      ),
+    };
+    const state = createGameState('b', 'normal');
+    const onError = vi.fn();
+    const controller = createAppController(state, aiClient, vi.fn(), onError);
+
+    const movePromise = controller.handlePlayerMove({
+      from: squareIndex(7, 7),
+      to: squareIndex(7, 6),
+      promote: false,
+    });
+    controller.resign();
+    rejectRequestMove(new Error('worker crashed'));
+    await movePromise;
+
+    expect(onError).not.toHaveBeenCalled();
+    expect(controller.getState().status).toBe('ended');
+  });
+
   it('状態変化のたびに onStateChange が呼ばれる', async () => {
     const state = createGameState('b', 'normal');
     const aiClient = { requestMove: vi.fn().mockResolvedValue('3c3d') };
     const onStateChange = vi.fn();
-    const controller = createAppController(state, aiClient, onStateChange);
+    const controller = createAppController(state, aiClient, onStateChange, vi.fn());
     await controller.handlePlayerMove({
       from: squareIndex(7, 7),
       to: squareIndex(7, 6),
