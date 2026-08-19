@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { squareIndex } from '../core/square';
 import { createAppController } from './app-controller';
-import { createGameState } from './game-state';
+import { applyMoveToState, createGameState } from './game-state';
 
 afterEach(() => {
   localStorage.clear();
@@ -103,6 +103,28 @@ describe('createAppController', () => {
       promote: false,
     });
     expect(localStorage.getItem('shogi-vs-cpu:save')).not.toBeNull();
+  });
+
+  it('後手を選んで対局を開始すると、CPU(先手)が自動的に指す', async () => {
+    const state = createGameState('w', 'normal');
+    const aiClient = { requestMove: vi.fn().mockResolvedValue('7g7f') };
+    const controller = createAppController(state, aiClient, vi.fn());
+    await controller.ready;
+    expect(aiClient.requestMove).toHaveBeenCalled();
+    expect(controller.getState().moveHistory).toHaveLength(1);
+  });
+
+  it('CPU番のまま保存された対局を再開すると、CPUが自動的に指す', async () => {
+    const played = applyMoveToState(createGameState('b', 'normal'), {
+      from: squareIndex(7, 7),
+      to: squareIndex(7, 6),
+      promote: false,
+    });
+    const aiClient = { requestMove: vi.fn().mockResolvedValue('3c3d') };
+    const controller = createAppController(played, aiClient, vi.fn());
+    await controller.ready;
+    expect(aiClient.requestMove).toHaveBeenCalled();
+    expect(controller.getState().moveHistory).toHaveLength(2);
   });
 
   it('状態変化のたびに onStateChange が呼ばれる', async () => {

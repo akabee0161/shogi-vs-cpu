@@ -24,6 +24,9 @@ export type AppController = {
   undo: () => void;
   resign: () => void;
   restart: (playerSide: 'b' | 'w', difficulty: Difficulty) => Promise<void>;
+  // 初期状態がCPU番(後手選択での新規対局、CPU番のまま保存されたデータの再開)の場合に
+  // 自動的に指させるための初期化Promise(CodeRabbit review, app-controller.ts:48-56)。
+  ready: Promise<void>;
 };
 
 function delay(ms: number): Promise<void> {
@@ -91,5 +94,6 @@ export function createAppController(
       setState(createGameState(playerSide, difficulty));
       await runCpuTurnIfNeeded();
     },
+    ready: runCpuTurnIfNeeded(),
   };
 }
