@@ -36,3 +36,12 @@ export function legalMoves(pos: Position): Move[] {
 export function hasNoLegalMoves(pos: Position): boolean {
   return legalMoves(pos).length === 0;
 }
+
+/** UI側から玉の位置を引くための null 許容版（盤上に玉がなくても例外を投げない）。 */
+export function findKingSquare(pos: Position, side: 'b' | 'w'): number | null {
+  const target = side === 'b' ? KING : -KING;
+  for (let i = 0; i < 81; i++) {
+    if (pos.board[i] === target) return i;
+  }
+  return null;
+}

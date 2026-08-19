@@ -6,7 +6,7 @@ import { showPromotionDialog } from './promotion-dialog';
 
 export type BoardController = {
   element: HTMLElement;
-  setPosition: (pos: Position) => void;
+  setPosition: (pos: Position, marks?: { lastMove?: Move; checkedKingSquare?: number }) => void;
   setInputEnabled: (enabled: boolean) => void;
   handlePieceTypeClick: (side: 'b' | 'w', pieceType: number) => void;
 };
@@ -119,9 +119,9 @@ export function createBoardController(
 
   return {
     element,
-    setPosition: (newPos) => {
+    setPosition: (newPos, marks) => {
       pos = newPos;
-      updateBoardElement(element, pos);
+      updateBoardElement(element, pos, marks);
       deselect();
     },
     setInputEnabled: (enabled) => {
