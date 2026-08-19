@@ -17,6 +17,9 @@ type SaveData = {
   moveHistory: string[];
   difficulty: Difficulty;
   playerSide: 'b' | 'w';
+  // 投了で終局した場合の勝者。詰み・千日手とは異なり、投了は盤面の再生からは復元できないため
+  // (盤面上は「まだ対局中」に見える)、終局理由そのものを直接保存する。
+  resignedWinner?: 'b' | 'w';
 };
 
 function isValidDifficulty(value: unknown): value is Difficulty {
@@ -35,18 +38,26 @@ function isValidSaveData(value: unknown): value is SaveData {
     Array.isArray(data.moveHistory) &&
     data.moveHistory.every((m) => typeof m === 'string') &&
     isValidDifficulty(data.difficulty) &&
-    isValidSide(data.playerSide)
+    isValidSide(data.playerSide) &&
+    (data.resignedWinner === undefined || isValidSide(data.resignedWinner))
   );
 }
 
 export function saveGame(state: GameState): void {
   const startPosition = state.history[0];
   if (startPosition === undefined) throw new Error('game state history must not be empty');
+  const resignedWinner =
+    state.endResult !== null &&
+    state.endResult.type === 'resign' &&
+    isValidSide(state.endResult.winner)
+      ? state.endResult.winner
+      : undefined;
   const data: SaveData = {
     startSfen: toSfen(startPosition),
     moveHistory: state.moveHistory.map(moveToUsi),
     difficulty: state.difficulty,
     playerSide: state.playerSide,
+    resignedWinner,
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -88,9 +99,13 @@ export function loadGame(): GameState | null {
     return null;
   }
 
-  const gameEnd = checkGameEnd(pos);
-  const repetition = gameEnd === null ? checkRepetition(history) : null;
-  const endResult: GameEndInfo | null = gameEnd ?? repetition;
+  // 投了は盤面の再生からは判定できないため、保存されていれば最優先で信頼する。
+  // (詰み・千日手は盤面から常に再現できるので、投了として保存されていない限りは今まで通り再計算する)
+  const resignResult: GameEndInfo | null =
+    parsed.resignedWinner !== undefined ? { type: 'resign', winner: parsed.resignedWinner } : null;
+  const gameEnd = resignResult === null ? checkGameEnd(pos) : null;
+  const repetition = resignResult === null && gameEnd === null ? checkRepetition(history) : null;
+  const endResult: GameEndInfo | null = resignResult ?? gameEnd ?? repetition;
 
   return {
     history,

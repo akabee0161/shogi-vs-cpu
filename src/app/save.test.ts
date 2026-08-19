@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { ROOK } from '../core/piece';
 import { parseSfen } from '../core/sfen';
 import { squareIndex } from '../core/square';
-import { applyMoveToState, createGameState } from './game-state';
+import { applyMoveToState, createGameState, resign } from './game-state';
 import { clearSave, loadGame, saveGame } from './save';
 
 afterEach(() => {
@@ -45,6 +45,21 @@ describe('saveGame / loadGame', () => {
     const loaded = loadGame();
     expect(loaded?.status).toBe('ended');
     expect(loaded?.endResult).toEqual({ type: 'checkmate', winner: 'b' });
+  });
+
+  it('投了で終局した対局を復元すると resign の endResult が再現される(盤面の再生だけでは投了は判定できないため)', () => {
+    let state = createGameState('b', 'normal');
+    state = applyMoveToState(state, {
+      from: squareIndex(7, 7),
+      to: squareIndex(7, 6),
+      promote: false,
+    });
+    const resigned = resign(state);
+    saveGame(resigned);
+
+    const loaded = loadGame();
+    expect(loaded?.status).toBe('ended');
+    expect(loaded?.endResult).toEqual({ type: 'resign', winner: 'w' });
   });
 
   it('壊れたJSONは null を返す', () => {
