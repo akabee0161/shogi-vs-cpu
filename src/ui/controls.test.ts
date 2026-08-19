@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createControlsElement } from './controls';
+import { createControlsElement, setControlsEnabled } from './controls';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -34,5 +34,22 @@ describe('createControlsElement', () => {
     const el = createControlsElement({ onUndo: vi.fn(), onResign, onRestart: vi.fn() });
     el.querySelector<HTMLButtonElement>('button[data-action="resign"]')?.click();
     expect(onResign).not.toHaveBeenCalled();
+  });
+
+  it('setControlsEnabled(false) で全ボタンが disabled になる', () => {
+    const el = createControlsElement({ onUndo: vi.fn(), onResign: vi.fn(), onRestart: vi.fn() });
+    setControlsEnabled(el, false);
+    for (const button of el.querySelectorAll('button')) {
+      expect(button.disabled).toBe(true);
+    }
+  });
+
+  it('setControlsEnabled(true) で全ボタンが再度有効になる', () => {
+    const el = createControlsElement({ onUndo: vi.fn(), onResign: vi.fn(), onRestart: vi.fn() });
+    setControlsEnabled(el, false);
+    setControlsEnabled(el, true);
+    for (const button of el.querySelectorAll('button')) {
+      expect(button.disabled).toBe(false);
+    }
   });
 });

@@ -9,13 +9,20 @@ import type { Move } from './core/moves';
 import { moveToKanji } from './core/record';
 import { findKingSquare, isInCheck } from './core/rules';
 import { createBoardController } from './ui/board-controller';
-import { createControlsElement } from './ui/controls';
+import { createControlsElement, setControlsEnabled } from './ui/controls';
 import { createEndGameModalElement } from './ui/end-game-modal';
 import { createHandsElement, updateHandsElement } from './ui/hands';
 import { appendRecordEntry, clearRecordView, createRecordViewElement } from './ui/record-view';
 import { createStatusElement, setStatusText } from './ui/status-view';
 import { createTitleScreenElement } from './ui/title-screen';
 
+// CodeRabbit review: Worker への複数リクエストが同時進行した場合、応答をrequestIdで
+// 相関付けていないため取り違えうる、との指摘を把握した上で見送っている。この取り違えが
+// 起こりうるのはCPU思考中に「まった/とうりょう/さいしょから」を押して2件目のリクエストが
+// 発生する場合のみで、それらのボタンはCPU思考中は無効化しており(controls.ts の
+// setControlsEnabled)、加えて app-controller.ts のバージョン番号チェックが古い応答を破棄
+// するため、UI経由では2件目のリクエストが発生しない。requestId 方式のWorkerプロトコル
+// 変更は相応の手間がかかる一方、現状は到達不能なため見送った。
 function createAiClient(): AiClient {
   const worker = new Worker(new URL('./ai/worker.ts', import.meta.url), { type: 'module' });
   return {
@@ -89,12 +96,14 @@ function startGame(app: HTMLElement, playerSide: 'b' | 'w', difficulty: Difficul
       ? (findKingSquare(pos, pos.sideToMove) ?? undefined)
       : undefined;
 
+    const isCpuTurn = state.status === 'playing' && pos.sideToMove !== state.playerSide;
+
     boardController.setPosition(pos, { lastMove, checkedKingSquare });
     updateHandsElement(senteHandsEl, pos, 'b');
     updateHandsElement(goteHandsEl, pos, 'w');
-    boardController.setInputEnabled(
-      state.status === 'playing' && pos.sideToMove === state.playerSide,
-    );
+    boardController.setInputEnabled(state.status === 'playing' && !isCpuTurn);
+    // CPU思考中は まった/とうりょう/さいしょから を無効化する(理由は controls.ts 参照)。
+    setControlsEnabled(controlsEl, !isCpuTurn);
 
     // 待った(undo)で手数が減ることもあるため、毎回きふ表示全体を組み直す。
     clearRecordView(recordEl);

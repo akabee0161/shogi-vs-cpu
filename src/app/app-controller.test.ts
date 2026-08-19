@@ -43,7 +43,7 @@ describe('createAppController', () => {
     expect(controller.getState().moveHistory).toHaveLength(2);
   });
 
-  it('undo で1手戻る', async () => {
+  it('undo でプレイヤーの手番まで戻る(CPU応手後なら2手戻る)', async () => {
     const state = createGameState('b', 'normal');
     const aiClient = { requestMove: vi.fn().mockResolvedValue('3c3d') };
     const controller = createAppController(state, aiClient, vi.fn());
@@ -53,6 +53,27 @@ describe('createAppController', () => {
       promote: false,
     });
     controller.undo();
+    expect(controller.getState().moveHistory).toHaveLength(0);
+    expect(controller.getState().status).toBe('playing');
+  });
+
+  it('CPU応答待ち中に resign すると、後から届くCPUの手は無視される', async () => {
+    vi.useFakeTimers();
+    const state = createGameState('b', 'normal');
+    const aiClient = { requestMove: vi.fn().mockResolvedValue('3c3d') };
+    const controller = createAppController(state, aiClient, vi.fn());
+
+    const movePromise = controller.handlePlayerMove({
+      from: squareIndex(7, 7),
+      to: squareIndex(7, 6),
+      promote: false,
+    });
+    controller.resign();
+    await vi.advanceTimersByTimeAsync(300);
+    await movePromise;
+
+    expect(controller.getState().status).toBe('ended');
+    expect(controller.getState().endResult).toEqual({ type: 'resign', winner: 'w' });
     expect(controller.getState().moveHistory).toHaveLength(1);
   });
 

@@ -20,6 +20,10 @@ export function createBoardController(
   let pos = initialPos;
   let selected: Selection | null = null;
   let inputEnabled = true;
+  // 成りダイアログの表示中に setPosition が呼ばれた(=局面が別物になった)場合、
+  // ダイアログ解決後に古い局面の手を onMove へ渡さないためのリビジョン番号。
+  // (CodeRabbit review, board-controller.ts:65)
+  let positionRevision = 0;
 
   const element = createBoardElement(pos, (square) => {
     void handleSquareClick(square);
@@ -61,7 +65,9 @@ export function createBoardController(
     if (promoteMove === undefined || declineMove === undefined) {
       throw new Error('expected both promote and non-promote candidates');
     }
+    const revisionAtOpen = positionRevision;
     const shouldPromote = await showPromotionDialog(element.parentElement ?? element);
+    if (positionRevision !== revisionAtOpen) return;
     onMove(shouldPromote ? promoteMove : declineMove);
   }
 
@@ -121,6 +127,7 @@ export function createBoardController(
     element,
     setPosition: (newPos, marks) => {
       pos = newPos;
+      positionRevision++;
       updateBoardElement(element, pos, marks);
       deselect();
     },

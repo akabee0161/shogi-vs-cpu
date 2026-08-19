@@ -77,6 +77,26 @@ describe('createBoardController', () => {
     });
   });
 
+  it('成りダイアログ表示中に setPosition が呼ばれた場合、ダイアログ解決後も onMove は呼ばれない', async () => {
+    const pos = parseSfen('9/9/9/4P4/9/9/9/9/4K4 b - 1');
+    const onMove = vi.fn();
+    const controller = createBoardController(pos, onMove);
+    document.body.appendChild(controller.element);
+    clickSquare(controller.element, squareIndex(5, 4));
+    clickSquare(controller.element, squareIndex(5, 3));
+
+    controller.setPosition(pos);
+
+    const promoteButton = document.querySelector<HTMLButtonElement>(
+      'button[data-choice="promote"]',
+    );
+    expect(promoteButton).not.toBeNull();
+    promoteButton?.click();
+    await Promise.resolve();
+
+    expect(onMove).not.toHaveBeenCalled();
+  });
+
   it('setInputEnabled(false) の間はクリックしても反応しない', () => {
     const pos = parseSfen('9/9/9/9/4P4/9/9/9/4K4 b - 1');
     const controller = createBoardController(pos, vi.fn());

@@ -31,3 +31,13 @@ export function createControlsElement(handlers: ControlsHandlers): HTMLElement {
   el.append(undoButton, resignButton, restartButton);
   return el;
 }
+
+// CPU思考中はこれらのボタンを無効化する。有効なままだと、CPUの応答が届く前に
+// まった/とうりょう/さいしょから を押して局面を変えられてしまい、後から届く
+// (すでに古くなった)CPUの手が新しい局面に誤って適用されうる。
+// (CodeRabbit review, app-controller.ts:56 / main.ts:30)
+export function setControlsEnabled(el: HTMLElement, enabled: boolean): void {
+  for (const button of el.querySelectorAll<HTMLButtonElement>('button')) {
+    button.disabled = !enabled;
+  }
+}
