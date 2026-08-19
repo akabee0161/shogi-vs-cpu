@@ -73,16 +73,21 @@ export function moveToKanji(move: Move, pos: Position, prevMove: Move | null): s
 const USI_DROP_CHAR_TO_TYPE: Record<string, number> = { P: 1, L: 2, N: 3, S: 4, G: 5, B: 6, R: 7 };
 
 function usiToSquare(usiSquare: string): number {
+  if (usiSquare.length < 2) throw new Error(`invalid usi square: ${usiSquare}`);
   const file = Number(usiSquare[0]);
   const rankLetter = usiSquare[1];
+  if (rankLetter === undefined) throw new Error(`invalid usi square: ${usiSquare}`);
   const rank = USI_RANK_LETTERS.indexOf(rankLetter) + 1;
   if (Number.isNaN(file) || rank < 1) throw new Error(`invalid usi square: ${usiSquare}`);
   return squareIndex(file, rank);
 }
 
 export function parseUsiMove(usi: string): Move {
+  if (usi.length < 2) throw new Error(`invalid usi move: ${usi}`);
   if (usi[1] === '*') {
-    const pieceType = USI_DROP_CHAR_TO_TYPE[usi[0]];
+    const pieceChar = usi[0];
+    if (pieceChar === undefined) throw new Error(`invalid usi drop move: ${usi}`);
+    const pieceType = USI_DROP_CHAR_TO_TYPE[pieceChar];
     if (pieceType === undefined) throw new Error(`invalid usi drop move: ${usi}`);
     return { from: null, to: usiToSquare(usi.slice(2, 4)), promote: false, drop: pieceType };
   }
