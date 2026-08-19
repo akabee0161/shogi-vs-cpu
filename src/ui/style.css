@@ -1,0 +1,166 @@
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: #f5f0e6;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: repeat(9, 1fr);
+  aspect-ratio: 1;
+  width: min(100vw, 480px);
+  border: 2px solid #333;
+}
+
+.board button {
+  position: relative;
+  border: 1px solid #999;
+  background: #f5deb3;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(12px, 4vw, 24px);
+  padding: 0;
+  cursor: pointer;
+}
+
+.board button.highlight {
+  outline: 3px solid #2a7;
+  outline-offset: -3px;
+}
+
+.board button.highlight::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2a7;
+}
+
+.piece-compact {
+  writing-mode: vertical-rl;
+  font-size: 0.6em;
+}
+
+.piece-gote {
+  display: inline-block;
+  transform: rotate(180deg);
+}
+
+.board button.last-move {
+  background: #ffe9a8;
+}
+
+.board button.checked-king {
+  background: #ffb3b3;
+}
+
+.status-view {
+  min-height: 1.5em;
+  font-weight: bold;
+  margin: 4px 0;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.controls button {
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+.hands {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0;
+}
+
+.hands button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.record-view-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+@media (min-width: 768px) and (orientation: landscape) {
+  #app {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 16px;
+  }
+}
+
+.title-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+}
+
+.title-side-select button,
+.title-difficulty-select button {
+  min-height: 44px;
+  padding: 0 16px;
+  margin: 0 4px;
+}
+
+.title-side-select button.selected,
+.title-difficulty-select button.selected {
+  background: #2a7;
+  color: white;
+}
+
+.title-screen > button[data-action="start"] {
+  min-height: 44px;
+  padding: 0 16px;
+}
+
+.end-game-modal-overlay,
+.promotion-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.end-game-modal,
+.promotion-dialog {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.end-game-modal button,
+.promotion-dialog button {
+  min-height: 44px;
+  padding: 0 16px;
+}
