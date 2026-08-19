@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PAWN } from './piece';
-import { moveToKanji, moveToUsi } from './record';
+import { moveToKanji, moveToUsi, parseUsiMove } from './record';
 import { parseSfen } from './sfen';
 import { squareIndex } from './square';
 
@@ -54,5 +54,43 @@ describe('moveToKanji', () => {
     const pos = parseSfen('9/9/9/9/9/9/9/9/9 b P 1');
     const move = { from: null, to: squareIndex(5, 5), promote: false, drop: PAWN };
     expect(moveToKanji(move, pos, null)).toBe('▲5五歩打');
+  });
+});
+
+describe('parseUsiMove', () => {
+  it('通常の移動をパースする(7g7f)', () => {
+    expect(parseUsiMove('7g7f')).toEqual({
+      from: squareIndex(7, 7),
+      to: squareIndex(7, 6),
+      promote: false,
+    });
+  });
+
+  it('成る手をパースする(2c2b+)', () => {
+    expect(parseUsiMove('2c2b+')).toEqual({
+      from: squareIndex(2, 3),
+      to: squareIndex(2, 2),
+      promote: true,
+    });
+  });
+
+  it('打つ手をパースする(P*5e)', () => {
+    expect(parseUsiMove('P*5e')).toEqual({
+      from: null,
+      to: squareIndex(5, 5),
+      promote: false,
+      drop: PAWN,
+    });
+  });
+
+  it('moveToUsi と parseUsiMove はラウンドトリップする', () => {
+    const moves = [
+      { from: squareIndex(7, 7), to: squareIndex(7, 6), promote: false },
+      { from: squareIndex(2, 3), to: squareIndex(2, 2), promote: true },
+      { from: null, to: squareIndex(5, 5), promote: false, drop: PAWN },
+    ];
+    for (const move of moves) {
+      expect(parseUsiMove(moveToUsi(move))).toEqual(move);
+    }
   });
 });

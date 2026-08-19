@@ -1,6 +1,6 @@
 import type { Move } from './moves';
 import type { Position } from './position';
-import { fileOf, rankOf } from './square';
+import { fileOf, rankOf, squareIndex } from './square';
 
 const USI_RANK_LETTERS = 'abcdefghi'; // rank1='a' 〜 rank9='i'
 const USI_DROP_CHARS: Record<number, string> = {
@@ -68,4 +68,26 @@ export function moveToKanji(move: Move, pos: Position, prevMove: Move | null): s
   const suffix = move.drop !== undefined ? '打' : move.promote ? '成' : '';
 
   return `${mark}${destination}${pieceName}${suffix}`;
+}
+
+const USI_DROP_CHAR_TO_TYPE: Record<string, number> = { P: 1, L: 2, N: 3, S: 4, G: 5, B: 6, R: 7 };
+
+function usiToSquare(usiSquare: string): number {
+  const file = Number(usiSquare[0]);
+  const rankLetter = usiSquare[1];
+  const rank = USI_RANK_LETTERS.indexOf(rankLetter) + 1;
+  if (Number.isNaN(file) || rank < 1) throw new Error(`invalid usi square: ${usiSquare}`);
+  return squareIndex(file, rank);
+}
+
+export function parseUsiMove(usi: string): Move {
+  if (usi[1] === '*') {
+    const pieceType = USI_DROP_CHAR_TO_TYPE[usi[0]];
+    if (pieceType === undefined) throw new Error(`invalid usi drop move: ${usi}`);
+    return { from: null, to: usiToSquare(usi.slice(2, 4)), promote: false, drop: pieceType };
+  }
+  const from = usiToSquare(usi.slice(0, 2));
+  const to = usiToSquare(usi.slice(2, 4));
+  const promote = usi.endsWith('+');
+  return { from, to, promote };
 }
