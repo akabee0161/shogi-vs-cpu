@@ -81,20 +81,11 @@ export function createBoardController(
       return;
     }
 
-    let candidates: Move[];
-    if (selected !== null && selected.kind === 'board') {
-      const boardSelection = selected as { kind: 'board'; square: number };
-      candidates = legalMoves(pos).filter(
-        (m) => m.from === boardSelection.square && m.to === square,
-      );
-    } else if (selected !== null && selected.kind === 'hand') {
-      const handSelection = selected as { kind: 'hand'; pieceType: number };
-      candidates = legalMoves(pos).filter(
-        (m) => m.drop === handSelection.pieceType && m.to === square,
-      );
-    } else {
-      candidates = [];
-    }
+    const current = selected;
+    const candidates =
+      current.kind === 'board'
+        ? legalMoves(pos).filter((m) => m.from === current.square && m.to === square)
+        : legalMoves(pos).filter((m) => m.drop === current.pieceType && m.to === square);
 
     if (candidates.length === 0) {
       if (ownMovesFromSquare.length > 0) {
