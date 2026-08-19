@@ -107,7 +107,16 @@ function mustPromote(pieceType: number, toRank: number, side: 'b' | 'w'): boolea
   return false;
 }
 
-/** 移動先が盤内かつ味方の駒がなければ手を追加する。戻り値 true はスライドをここで止めるべき合図。 */
+/**
+ * 移動先が盤内かつ味方の駒がなければ手を追加する。戻り値 true はスライドをここで止めるべき合図。
+ *
+ * CodeRabbit review: 相手玉を捕獲する手を legalMoves から明示的に除外していない、との
+ * 指摘を把握した上で見送っている。legalMoves の自玉王手フィルタにより、
+ * 「相手玉が捕獲可能な局面」は必ず直前の着手側にとっての詰み(hasNoLegalMoves)と一致し、
+ * game-state.ts の applyMoveToState が着手のたびに checkGameEnd を呼んで対局を終了させる
+ * ため、実際のゲーム進行(および同じ不変条件の上に成り立つ探索の再帰)では到達しない
+ * (perft depth4 の既知値一致、Task12 Ruling10 で実証済み)。
+ */
 function addMoveIfValid(
   pos: Position,
   moves: Move[],
