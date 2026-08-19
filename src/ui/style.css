@@ -133,6 +133,11 @@ body {
   color: white;
 }
 
+.title-screen > button[data-action="start"] {
+  min-height: 44px;
+  padding: 0 16px;
+}
+
 .end-game-modal-overlay,
 .promotion-dialog-overlay {
   position: fixed;
