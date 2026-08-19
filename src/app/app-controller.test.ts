@@ -127,6 +127,33 @@ describe('createAppController', () => {
     expect(controller.getState().moveHistory).toHaveLength(2);
   });
 
+  it('後手対局でCPUの初手をundoしても、CPUが指し直して操作不能にならない', async () => {
+    const state = createGameState('w', 'normal');
+    const aiClient = { requestMove: vi.fn().mockResolvedValue('7g7f') };
+    const controller = createAppController(state, aiClient, vi.fn());
+    await controller.ready;
+    expect(controller.getState().moveHistory).toHaveLength(1);
+
+    await controller.undo();
+
+    expect(controller.getState().moveHistory).toHaveLength(1);
+    expect(controller.getState().status).toBe('playing');
+    expect(aiClient.requestMove).toHaveBeenCalledTimes(2);
+  });
+
+  it("restart('w', ...) 直後のCPU初手をundoしても操作不能にならない", async () => {
+    const state = createGameState('b', 'normal');
+    const aiClient = { requestMove: vi.fn().mockResolvedValue('7g7f') };
+    const controller = createAppController(state, aiClient, vi.fn());
+    await controller.restart('w', 'weak');
+    expect(controller.getState().moveHistory).toHaveLength(1);
+
+    await controller.undo();
+
+    expect(controller.getState().moveHistory).toHaveLength(1);
+    expect(controller.getState().status).toBe('playing');
+  });
+
   it('状態変化のたびに onStateChange が呼ばれる', async () => {
     const state = createGameState('b', 'normal');
     const aiClient = { requestMove: vi.fn().mockResolvedValue('3c3d') };

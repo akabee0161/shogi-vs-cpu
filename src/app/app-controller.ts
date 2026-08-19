@@ -21,7 +21,7 @@ export type AiClient = {
 export type AppController = {
   getState: () => GameState;
   handlePlayerMove: (move: Move) => Promise<void>;
-  undo: () => void;
+  undo: () => Promise<void>;
   resign: () => void;
   restart: (playerSide: 'b' | 'w', difficulty: Difficulty) => Promise<void>;
   // 初期状態がCPU番(後手選択での新規対局、CPU番のまま保存されたデータの再開)の場合に
@@ -88,7 +88,13 @@ export function createAppController(
   return {
     getState: () => state,
     handlePlayerMove,
-    undo: () => setState(undoToPlayerTurn(state)),
+    // CPUの初手をundoすると、undoToPlayerTurnが初期局面(history.length===1)で
+    // 止まりCPU番のまま戻ることがある(playerSide==='w'の対局)。CPU応手を再開しないと
+    // 操作不能になる(CodeRabbit review, app-controller.ts:39-48)ため再開する。
+    undo: async () => {
+      setState(undoToPlayerTurn(state));
+      await runCpuTurnIfNeeded();
+    },
     resign: () => setState(resignState(state)),
     restart: async (playerSide, difficulty) => {
       setState(createGameState(playerSide, difficulty));
