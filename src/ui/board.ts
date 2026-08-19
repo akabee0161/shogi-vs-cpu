@@ -73,10 +73,22 @@ export function createBoardElement(
   return boardEl;
 }
 
-export function updateBoardElement(boardEl: HTMLElement, pos: Position): void {
+export function updateBoardElement(
+  boardEl: HTMLElement,
+  pos: Position,
+  marks: { lastMove?: import('../core/moves').Move; checkedKingSquare?: number } = {},
+): void {
   const buttons = boardEl.querySelectorAll<HTMLButtonElement>('button[data-square]');
   for (const button of buttons) {
     const square = Number(button.dataset.square);
     updateSquareButton(button, square, pos.board[square] ?? 0);
+
+    button.classList.remove('last-move', 'checked-king');
+    if (marks.lastMove && (marks.lastMove.from === square || marks.lastMove.to === square)) {
+      button.classList.add('last-move');
+    }
+    if (marks.checkedKingSquare === square) {
+      button.classList.add('checked-king');
+    }
   }
 }

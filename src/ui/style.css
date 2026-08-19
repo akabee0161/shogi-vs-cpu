@@ -61,3 +61,53 @@ body {
   display: inline-block;
   transform: rotate(180deg);
 }
+
+.board button.last-move {
+  background: #ffe9a8;
+}
+
+.board button.checked-king {
+  background: #ffb3b3;
+}
+
+.status-view {
+  min-height: 1.5em;
+  font-weight: bold;
+  margin: 4px 0;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.controls button {
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+.hands {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0;
+}
+
+.hands button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.record-view-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+@media (min-width: 768px) and (orientation: landscape) {
+  #app {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 16px;
+  }
+}

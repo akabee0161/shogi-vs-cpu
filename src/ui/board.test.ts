@@ -63,3 +63,46 @@ describe('updateBoardElement', () => {
     expect(button?.querySelector('.piece')?.textContent).toBe('歩');
   });
 });
+
+describe('updateBoardElement (最終手・王手の表示)', () => {
+  it('lastMove を渡すと移動元・移動先に last-move クラスが付く', () => {
+    const el = createBoardElement(parseSfen('9/9/9/9/4P4/9/9/9/9 b - 1'), () => {});
+    const lastMove = { from: squareIndex(5, 6), to: squareIndex(5, 5), promote: false };
+    updateBoardElement(el, parseSfen('9/9/9/9/4P4/9/9/9/9 b - 1'), { lastMove });
+    expect(
+      el
+        .querySelector(`button[data-square="${squareIndex(5, 6)}"]`)
+        ?.classList.contains('last-move'),
+    ).toBe(true);
+    expect(
+      el
+        .querySelector(`button[data-square="${squareIndex(5, 5)}"]`)
+        ?.classList.contains('last-move'),
+    ).toBe(true);
+  });
+
+  it('checkedKingSquare を渡すとそのマスに checked-king クラスが付く', () => {
+    const pos = parseSfen('4k4/9/9/9/9/9/9/9/4K4 b - 1');
+    const el = createBoardElement(pos, () => {});
+    updateBoardElement(el, pos, { checkedKingSquare: squareIndex(5, 1) });
+    expect(
+      el
+        .querySelector(`button[data-square="${squareIndex(5, 1)}"]`)
+        ?.classList.contains('checked-king'),
+    ).toBe(true);
+  });
+
+  it('オプションを渡さない更新では前回のマークが消える', () => {
+    const pos = parseSfen('9/9/9/9/4P4/9/9/9/9 b - 1');
+    const el = createBoardElement(pos, () => {});
+    updateBoardElement(el, pos, {
+      lastMove: { from: squareIndex(5, 6), to: squareIndex(5, 5), promote: false },
+    });
+    updateBoardElement(el, pos);
+    expect(
+      el
+        .querySelector(`button[data-square="${squareIndex(5, 5)}"]`)
+        ?.classList.contains('last-move'),
+    ).toBe(false);
+  });
+});
