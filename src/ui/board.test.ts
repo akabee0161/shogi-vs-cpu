@@ -8,8 +8,12 @@ describe('squareAriaLabel', () => {
     expect(squareAriaLabel(squareIndex(7, 6), 0)).toBe('7六');
   });
 
-  it('駒があればマス名+駒名', () => {
-    expect(squareAriaLabel(squareIndex(7, 6), 1)).toBe('7六 歩'); // 先手歩(正の値)
+  it('駒があればマス名+持ち主+駒名(先手)', () => {
+    expect(squareAriaLabel(squareIndex(7, 6), 1)).toBe('7六 先手 歩'); // 先手歩(正の値)
+  });
+
+  it('駒があればマス名+持ち主+駒名(後手)', () => {
+    expect(squareAriaLabel(squareIndex(3, 4), -1)).toBe('3四 後手 歩'); // 後手歩(負の値)
   });
 });
 

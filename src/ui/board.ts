@@ -29,7 +29,9 @@ export function squareAriaLabel(square: number, piece: number): string {
   const label = squareLabel(square);
   if (piece === 0) return label;
   const name = PIECE_NAMES[Math.abs(piece)];
-  return name === undefined ? label : `${label} ${name}`;
+  if (name === undefined) return label;
+  const owner = piece > 0 ? '先手' : '後手';
+  return `${label} ${owner} ${name}`;
 }
 
 function renderSquareContent(button: HTMLButtonElement, piece: number): void {
